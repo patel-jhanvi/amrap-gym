@@ -1,165 +1,103 @@
-# amrap-gym
-AMRAP Gym Management System (Full-Stack)
-AMRAP Gym Management System
+<h1 align="center">🏋️‍♀️ AMRAP Gym Management System</h1>
 
-A full-stack gym membership + capacity management system following clean architecture.
+<p align="center">
+  A full-stack gym membership & capacity management platform built with clean architecture.<br/>
+  React + Node.js + TypeScript + PostgreSQL + Prisma
+</p>
 
-<project>
-  <name>AMRAP Gym Management System</name>
-  <description>Full-stack system for managing gyms, users, memberships, and real business rules.</description>
-</project>
+<br/>
 
-Overview
-<overview>
-  A complete React + Node.js + PostgreSQL project implementing:
-  - Gym capacity rules
-  - User → Gym memberships
-  - Multiple gym memberships per user
-  - Prevent joining full gyms
-  - Sorted gym and user views
-  - Clean Architecture on backend
-  - Service-based architecture on frontend
-</overview>
+<p align="center">
+  <!-- Tech Badges -->
+  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white"/>
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white"/>
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white"/>
+  <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black"/>
+  <img src="https://img.shields.io/badge/TailwindCSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white"/>
+</p>
 
-Tech Stack
-<techstack>
-  <frontend>React, TypeScript, TailwindCSS</frontend>
-  <backend>Node.js, Express, TypeScript</backend>
-  <database>PostgreSQL + Prisma ORM</database>
-  <tools>Postman, Git, GitHub</tools>
-</techstack>
+<br/>
 
-Core Features
-<features>
+<section>
+  <h2>📌 Overview</h2>
+  <p>
+    AMRAP Gym Management System is a complete full-stack application for managing:
+  </p>
 
-  <users>
-    <create />
-    <edit />
-    <viewProfile />
-    <multipleGymMemberships />
-  </users>
+  <ul>
+    <li>Gym capacity limits</li>
+    <li>User → Gym memberships</li>
+    <li>Multiple memberships per user</li>
+    <li>Prevent joining full gyms</li>
+    <li>Sorted gym and user views</li>
+    <li>Clean backend architecture (controllers → services → repositories)</li>
+    <li>Service-based frontend architecture (React + TypeScript)</li>
+  </ul>
+</section>
 
-  <gyms>
-    <capacityLimit />
-    <spotsLeftCalculation />
-    <sortingByAvailability />
-    <viewMembers />
-  </gyms>
+<br/>
 
-  <memberships>
-    <addMembership />
-    <removeMembership />
-    <validateCapacity />
-    <preventDuplicateMembership />
-  </memberships>
+<section>
+  <h2>🔗 Related Repositories</h2>
+  <p>
+    <strong>Backend:</strong>
+    <a href="https://github.com/patel-jhanvi/amrap-gym-api">amrap-gym-api</a><br/>
+    <strong>Frontend:</strong> This repository
+  </p>
+</section>
 
-</features>
+<br/>
 
-Business Rules
-<businessRules>
+<section>
+  <h2>⚙️ Backend Architecture</h2>
+  <p>Built using clean layered architecture:</p>
 
-  <rule name="GymCapacity">
-    Users cannot join a gym if spotsLeft = 0.
-  </rule>
 
-  <rule name="MultipleMemberships">
-    Users may join more than one gym.
-  </rule>
+controllers/
+services/
+repositories/
+routes/
+prisma/
+server.ts
+</section> <br/> <section> <h2>🖥️ Frontend Architecture</h2>
+src/
+├── components/
+├── pages/
+│   ├── users/
+│   ├── gyms/
+│   └── memberships/ (removed later in redesign)
+├── router/
+├── services/  (API abstraction layer)
+└── index.tsx
 
-  <rule name="SortedGyms">
-    Gyms displayed by most available spots first.
-  </rule>
+</section> <br/> <section> <h2> Core Features</h2> <ul> <li>User CRUD</li> <li>Gym CRUD</li> <li>Add / Remove memberships</li> <li>Gym capacity logic (maxCapacity)</li> <li>Show spots left per gym</li> <li>Sort gyms by available spots</li> <li>Sort members by join date (newest first)</li> <li>Prevent joining full gyms</li> <li>Detailed gym member view</li> <li>Clean modals for editing and management</li> </ul> </section> <br/> <section> <h2> Business Logic</h2> <ul> <li>Users cannot join a gym where <code>spotsLeft = 0</code></li> <li>Users may belong to multiple gyms</li> <li>Gyms must show real-time spots left = <code>maxCapacity - currentMembers</code></li> <li>Members sorted by join date descending</li> <li>Gyms sorted by most available spots</li> </ul> </section> <br/> <section> <h2>🔌 API Summary</h2>
+GET     /users
+POST    /users
+PUT     /users/:id
+DELETE  /users/:id
 
-  <rule name="SortedMembers">
-    Users displayed by newest join date first.
-  </rule>
+GET     /gyms
+POST    /gyms
+PUT     /gyms/:id
+DELETE  /gyms/:id
 
-</businessRules>
+POST    /memberships
+DELETE  /memberships
 
-API Summary
-<api>
+GET     /users/:id/gyms
+GET     /gyms/:id/users
 
-  <users>
-    GET  /users
-    POST /users
-    PUT  /users/:id
-    GET  /users/:id/gyms
-  </users>
+</section> <br/> <section> <h2>UI Preview</h2> <p> Clean dark UI using TailwindCSS + React.</p> <!-- Screenshots can be added like below --> <!-- <img src="/screenshots/dashboard.png" width="800"/> --> </section> <br/> <section> <h2>Installation</h2> <h3>Backend</h3>
+cd amrap-gym-api
+npm install
+npx prisma migrate dev
+npm run dev
 
-  <gyms>
-    GET    /gyms
-    POST   /gyms
-    PUT    /gyms/:id
-    DELETE /gyms/:id
-    GET    /gyms/:id/users
-  </gyms>
+<h3>Frontend</h3>
+cd amrap-gym-ui
+npm install
+npm run dev
 
-  <memberships>
-    POST   /memberships
-    DELETE /memberships
-  </memberships>
-
-</api>
-
-Frontend Structure
-<frontend>
-  <pages>
-    users/
-    gyms/
-    memberships/
-  </pages>
-  <components>
-    ManageMembershipModal
-    EditUserModal
-    CreateGymModal
-  </components>
-  <services>
-    userService
-    gymService
-    membershipService
-  </services>
-</frontend>
-
-Backend Structure
-<backend>
-  <controllers />
-  <services />
-  <repositories />
-  <routes />
-  <prisma />
-</backend>
-
-Installation
-<setup>
-
-  <backend>
-    cd backend
-    npm install
-    npx prisma migrate dev
-    npm run dev
-  </backend>
-
-  <frontend>
-    cd amrap-gym-ui
-    npm install
-    npm run dev
-  </frontend>
-
-</setup>
-
-Skills Demonstrated
-<skills>
-  <cleanArchitecture />
-  <fullstackIntegration />
-  <validationAndBusinessLogic />
-  <reactComponentArchitecture />
-  <typescriptEverywhere />
-  <apiDesign />
-</skills>
-
-Author
-<author>
-  <name>Jhanvi Patel</name>
-  <role>Full-Stack Developer</role>
-  <github>github.com/patel-jhanvi</github>
-</author>
+</section> <br/> <section> <h2> Skills Demonstrated</h2> <ul> <li>Clean Architecture</li> <li>Full-stack TypeScript development</li> <li>PostgreSQL & Prisma ORM modeling</li> <li>React service abstraction (API layer)</li> <li>State management using hooks</li> <li>Building real business rules (capacity logic)</li> <li>Component-based reusable UI</li> </ul> </section> <br/> <section> <h2>👩‍💻 Author</h2> <p> <strong>Jhanvi Patel</strong><br/> Full-Stack Developer<br/> <a href="https://github.com/patel-jhanvi">GitHub Profile</a> </p> </section> ```
