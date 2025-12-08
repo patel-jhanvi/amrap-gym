@@ -32,6 +32,20 @@ const Home = () => {
                 </Link>
 
             </div>
+            {/* Footer */}
+            <div className="mt-16 text-center text-gray-500 text-sm">
+                Developed by <span className="text-gray-300 font-semibold">Jhanvi Patel</span>
+                • © {new Date().getFullYear()}
+                <br />
+                <a
+                    href="https://github.com/patel-jhanvi/amrap-gym"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:text-blue-300 underline"
+                >
+                    GitHub Repository
+                </a>
+            </div>
         </div>
     );
 };
