@@ -1,4 +1,4 @@
-<h1 align="center">🏋️‍♀️ AMRAP Gym Management System</h1>
+<h1 align="center"> AMRAP Gym Management System</h1>
 
 <p align="center">
   A full-stack gym membership & capacity management platform built with clean architecture.<br/>
@@ -21,7 +21,7 @@
 <br/>
 
 <section>
-  <h2>📌 Overview</h2>
+  <h2> Overview</h2>
   <p>
     AMRAP Gym Management System is a complete full-stack application for managing:
   </p>
@@ -100,4 +100,4 @@ cd amrap-gym-ui
 npm install
 npm run dev
 
-</section> <br/> <section> <h2> Skills Demonstrated</h2> <ul> <li>Clean Architecture</li> <li>Full-stack TypeScript development</li> <li>PostgreSQL & Prisma ORM modeling</li> <li>React service abstraction (API layer)</li> <li>State management using hooks</li> <li>Building real business rules (capacity logic)</li> <li>Component-based reusable UI</li> </ul> </section> <br/> <section> <h2>👩‍💻 Author</h2> <p> <strong>Jhanvi Patel</strong><br/> Full-Stack Developer<br/> <a href="https://github.com/patel-jhanvi">GitHub Profile</a> </p> </section> ```
+</section> <br/> <section> <h2> Skills Demonstrated</h2> <ul> <li>Clean Architecture</li> <li>Full-stack TypeScript development</li> <li>PostgreSQL & Prisma ORM modeling</li> <li>React service abstraction (API layer)</li> <li>State management using hooks</li> <li>Building real business rules (capacity logic)</li> <li>Component-based reusable UI</li> </ul> </section> <br/> <section> <h2>👩‍💻 Author</h2> <p> <strong>Jhanvi Patel</strong><br/> Full-Stack Developer<br/> <a href="https://github.com/patel-jhanvi">GitHub Profile</a> </p> </section> 
