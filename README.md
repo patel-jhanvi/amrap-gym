@@ -40,7 +40,7 @@
 <br/>
 
 <section>
-  <h2>🔗 Related Repositories</h2>
+  <h2> Related Repositories</h2>
   <p>
     <strong>Backend:</strong>
     <a href="https://github.com/patel-jhanvi/amrap-gym-api">amrap-gym-api</a><br/>
@@ -51,7 +51,7 @@
 <br/>
 
 <section>
-  <h2>⚙️ Backend Architecture</h2>
+  <h2> Backend Architecture</h2>
   <p>Built using clean layered architecture:</p>
 
 
@@ -63,7 +63,7 @@ prisma/
 server.ts
 
 <section>
-  <h2>🖥️ Frontend Architecture</h2>
+  <h2>Frontend Architecture</h2>
 
   <pre>
 src/
@@ -78,7 +78,7 @@ src/
   </pre>
 </section>
 
- <br/> <section> <h2> Core Features</h2> <ul> <li>User CRUD</li> <li>Gym CRUD</li> <li>Add / Remove memberships</li> <li>Gym capacity logic (maxCapacity)</li> <li>Show spots left per gym</li> <li>Sort gyms by available spots</li> <li>Sort members by join date (newest first)</li> <li>Prevent joining full gyms</li> <li>Detailed gym member view</li> <li>Clean modals for editing and management</li> </ul> </section> <br/> <section> <h2> Business Logic</h2> <ul> <li>Users cannot join a gym where <code>spotsLeft = 0</code></li> <li>Users may belong to multiple gyms</li> <li>Gyms must show real-time spots left = <code>maxCapacity - currentMembers</code></li> <li>Members sorted by join date descending</li> <li>Gyms sorted by most available spots</li> </ul> </section> <br/> <section> <h2>🔌 API Summary</h2>
+ <br/> <section> <h2> Core Features</h2> <ul> <li>User CRUD</li> <li>Gym CRUD</li> <li>Add / Remove memberships</li> <li>Gym capacity logic (maxCapacity)</li> <li>Show spots left per gym</li> <li>Sort gyms by available spots</li> <li>Sort members by join date (newest first)</li> <li>Prevent joining full gyms</li> <li>Detailed gym member view</li> <li>Clean modals for editing and management</li> </ul> </section> <br/> <section> <h2> Business Logic</h2> <ul> <li>Users cannot join a gym where <code>spotsLeft = 0</code></li> <li>Users may belong to multiple gyms</li> <li>Gyms must show real-time spots left = <code>maxCapacity - currentMembers</code></li> <li>Members sorted by join date descending</li> <li>Gyms sorted by most available spots</li> </ul> </section> <br/> <section> <h2>API Summary</h2>
 GET     /users
 POST    /users
 PUT     /users/:id
@@ -106,4 +106,4 @@ cd amrap-gym-ui
 npm install
 npm run dev
 
-</section> <br/> <section> <h2> Skills Demonstrated</h2> <ul> <li>Clean Architecture</li> <li>Full-stack TypeScript development</li> <li>PostgreSQL & Prisma ORM modeling</li> <li>React service abstraction (API layer)</li> <li>State management using hooks</li> <li>Building real business rules (capacity logic)</li> <li>Component-based reusable UI</li> </ul> </section> <br/> <section> <h2>👩‍💻 Author</h2> <p> <strong>Jhanvi Patel</strong><br/> Full-Stack Developer<br/> <a href="https://github.com/patel-jhanvi">GitHub Profile</a> </p> </section> 
+</section> <br/> <section> <h2> Skills Demonstrated</h2> <ul> <li>Clean Architecture</li> <li>Full-stack TypeScript development</li> <li>PostgreSQL & Prisma ORM modeling</li> <li>React service abstraction (API layer)</li> <li>State management using hooks</li> <li>Building real business rules (capacity logic)</li> <li>Component-based reusable UI</li> </ul> </section> <br/> <section> <h2>Author</h2> <p> <strong>Jhanvi Patel</strong><br/> Full-Stack Developer<br/> <a href="https://github.com/patel-jhanvi">GitHub Profile</a> </p> </section> 
