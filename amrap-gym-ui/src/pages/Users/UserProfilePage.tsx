@@ -8,12 +8,11 @@ import type { User } from "../../types/User";
 import type { Gym } from "../../types/Gym";
 import ManageMembershipModal from "./ManageMembershipModal";
 
-// Extend the User type temporarily to hold the joinDate found by the special fetch
 interface UserWithJoinDate extends User {
     joinDate?: string;
 }
 
-// Define the structure for a Gym with the attached Membership data (for join date fix)
+
 interface GymWithMembership extends Gym {
     joinDate?: string;
 }
@@ -26,15 +25,14 @@ const ProfileDetail = ({ label, value }: { label: string; value: string | number
     </div>
 );
 
-// --- HELPER FUNCTION: FORCES THE DATE RETRIEVAL USING THE RELIABLE API ---
+
 const fetchAndFindEarliestJoinDate = async (userId: string, assignedGyms: GymWithMembership[]) => {
     let earliestDate: Date | null = null;
 
-    // Iterate through all assigned gyms
+
     for (const gym of assignedGyms) {
         try {
-            // CALLS THE RELIABLE API ENDPOINT (`/gyms/{id}/users`)
-            // This retrieves the membership list with the joinDate
+
             const members: { joinDate: string; id: string }[] = await membershipService.getUsersInGym(gym.id);
 
             // Find the specific user's membership in the list
@@ -84,14 +82,14 @@ const UserProfilePage = () => {
 
             const assignedGyms = gymsForUser as GymWithMembership[];
 
-            // --- FINAL FIX IMPLEMENTATION ---
+
             const earliestJoinDateISO = await fetchAndFindEarliestJoinDate(id, assignedGyms);
 
-            // Manually attach the correct date to the user object for display
+
             if (earliestJoinDateISO) {
                 (userRes as UserWithJoinDate).joinDate = earliestJoinDateISO;
             }
-            // --- END FINAL FIX IMPLEMENTATION ---
+
 
 
             setUser(userRes as UserWithJoinDate);
@@ -108,7 +106,7 @@ const UserProfilePage = () => {
 
     useEffect(() => {
         loadData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+
     }, [id]);
 
     const handleAddGym = async () => {
@@ -176,7 +174,7 @@ const UserProfilePage = () => {
 
     const userAge = calculateAge(user.dateOfBirth);
 
-    // --- DISPLAY LOGIC: USES THE ATTACHED joinDate ---
+
     const joinDateDisplay = user.joinDate
         ? new Date(user.joinDate).toLocaleDateString()
         : (user.createdAt
@@ -197,7 +195,7 @@ const UserProfilePage = () => {
 
                     <button
                         onClick={() => navigate(`/users/${id}/edit`)}
-                        // Edit action uses the Emerald color
+
                         className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-white font-semibold"
                     >
                         Edit User Profile

@@ -5,9 +5,7 @@ import { membershipService } from "../../services/membershipService";
 import type { Gym } from "../../types/Gym";
 import { getGymImagePath, FALLBACK_IMAGE_PATH } from "../../utils/imageUtils";
 
-// --- START: Type and Card Component Definitions ---
 
-// Define the shape of a gym object with calculated membership data
 interface GymWithCounts extends Gym {
     currentMembers: number;
     spotsLeft: number | string;
@@ -21,16 +19,16 @@ interface GymCardProps {
 }
 
 const GymCard = ({ gym, navigate, setEditingGym, handleDelete }: GymCardProps) => {
-    // Initial state set to the specific gym image path
+
     const [imageSrc, setImageSrc] = useState(getGymImagePath(gym.name));
 
-    // Fallback handler if the specific image is not found (404)
+
     const handleImageError = () => {
         setImageSrc(FALLBACK_IMAGE_PATH);
     };
 
     return (
-        // Entire card is clickable to navigate to details page
+
         <div
             key={gym.id}
             className="bg-slate-800 rounded-xl border border-slate-700 shadow-xl overflow-hidden flex flex-col transition-all duration-300 hover:shadow-2xl hover:border-indigo-400 cursor-pointer"
@@ -73,13 +71,11 @@ const GymCard = ({ gym, navigate, setEditingGym, handleDelete }: GymCardProps) =
                     {/* Check if maxCapacity is NOT null before applying specific color logic */}
                     {gym.maxCapacity !== null && (
                         <p
-                            className={`font-bold text-lg mt-1 ${
-                                // FIXED: Use type assertion (as number) for the comparison
-                                (gym.spotsLeft as number) === 0
-                                    ? "text-rose-400"
-                                    : (gym.spotsLeft as number) < 5
-                                        ? "text-yellow-400"
-                                        : "text-green-400"
+                            className={`font-bold text-lg mt-1 ${(gym.spotsLeft as number) === 0
+                                ? "text-rose-400"
+                                : (gym.spotsLeft as number) < 5
+                                    ? "text-yellow-400"
+                                    : "text-green-400"
                                 }`}
                         >
                             Spots Left: {gym.spotsLeft}
@@ -87,7 +83,7 @@ const GymCard = ({ gym, navigate, setEditingGym, handleDelete }: GymCardProps) =
                     )}
                 </div>
 
-                {/* Actions - Prevent click propagation so buttons don't trigger card navigation */}
+
                 <div className="flex gap-3 mt-4" onClick={(e) => e.stopPropagation()}>
 
                     <button

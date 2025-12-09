@@ -2,24 +2,22 @@ import { useEffect, useState, useMemo } from "react";
 import { userService } from "../../services/userService";
 import { gymService } from "../../services/gymService";
 import api from "../../services/api";
-import LoadingSpinner from "../../components/ui/LoadingSpinner";
+
 import type { Gym } from "../../types/Gym";
 import type { User } from "../../types/User";
 import { Link, useNavigate } from "react-router-dom";
 
-// Define the structure for a Gym with the attached Membership data
+
 interface GymWithMembership extends Gym {
     joinDate?: string;
 }
 
-// FINAL FIX: We only extend Gym to add the calculated property (availableSpots).
-// This resolves the TS conflict with 'maxCapacity'.
+
 interface GymWithAvailability extends Gym {
     availableSpots: number;
 }
 
 
-// --- START: UserCard Component ---
 
 interface UserCardProps {
     user: User;
@@ -46,24 +44,11 @@ const UserCard = ({ user, userGyms, navigate, handleDelete }: UserCardProps) => 
     };
     const userAge = calculateAge(user.dateOfBirth);
 
-    // --- JOIN DATE FIX: Look for the earliest membership date ---
-    const earliestMembership = assigned.reduce((earliest, current) => {
-        if (!current.joinDate) return earliest;
-
-        const currentDate = new Date(current.joinDate);
-
-        if (!earliest.joinDate) return current;
-
-        const earliestDate = new Date(earliest.joinDate);
-
-        return currentDate < earliestDate ? current : earliest;
-    }, assigned[0] || {} as GymWithMembership);
-
-    const memberSinceDate = (earliestMembership?.joinDate)
-        ? new Date(earliestMembership.joinDate).toLocaleDateString()
-        : (user.createdAt
-            ? new Date(user.createdAt).toLocaleDateString()
-            : "N/A");
+    // --- FINAL JOIN DATE FIX: Use the reliable User Creation Date (user.createdAt) ---
+    // The complex logic is removed because joinDate is NOT guaranteed by the API here.
+    const memberSinceDate = (user.createdAt)
+        ? new Date(user.createdAt).toLocaleDateString()
+        : "N/A";
 
     // --- END JOIN DATE FIX ---
 
@@ -72,10 +57,7 @@ const UserCard = ({ user, userGyms, navigate, handleDelete }: UserCardProps) => 
         // Entire card is clickable to navigate to the profile page
         <div
             key={user.id}
-            // New class: Deeper shadow (2xl), softer border, and a dramatic lift/border change on hover
-            className="bg-slate-800 rounded-xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col 
-               transition-all duration-300 cursor-pointer 
-               hover:border-indigo-500 hover:shadow-indigo-500/20"
+            className="bg-slate-700 rounded-xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col transition-all duration-300 cursor-pointer hover:border-indigo-500 hover:shadow-indigo-500/20"
             onClick={() => navigate(`/users/${user.id}`)}
         >
             {/* Top Bar showing "Member Since" */}
@@ -210,10 +192,10 @@ const UsersPage = () => {
         fetchAll();
         loadGyms();
 
-        // Dependency array ensures loadUsers runs every time searchTerm changes
+
     }, [searchTerm]);
 
-    // Runs whenever users list changes (needed for UserCard to display gym info)
+
     useEffect(() => {
         if (users.length > 0) loadUserGyms(users);
     }, [users]);
@@ -261,9 +243,7 @@ const UsersPage = () => {
 
     // --- GYM SORTING LOGIC ---
     const sortedGyms = useMemo(() => {
-        // NOTE: This logic relies on the Gym state having maxCapacity and currentMembers
-        // properties attached, which is often done in GymsPage but might be missing here.
-        // We use safe typing to avoid errors, assuming capacity/member data is available.
+
 
         const gymsWithAvailability: GymWithAvailability[] = gyms.map(gym => {
             // Get capacity directly from the Gym type, handling null capacity
@@ -286,8 +266,8 @@ const UsersPage = () => {
             const aSpots = a.availableSpots;
             const bSpots = b.availableSpots;
 
-            if (aSpots === undefined || aSpots === null) return 1; // Put undefined spots last
-            if (bSpots === undefined || bSpots === null) return -1; // Put undefined spots last
+            if (aSpots === undefined || aSpots === null) return 1;
+            if (bSpots === undefined || bSpots === null) return -1;
 
             return bSpots - aSpots;
         });
@@ -297,7 +277,7 @@ const UsersPage = () => {
 
 
     return (
-        <div className="p-10 min-h-screen bg-slate-900 text-white">
+        <div className="p-10 min-h-screen bg-slate-800 text-white">
             {/* Header */}
             <div className="flex justify-between items-center mb-8">
                 <h1 className="text-3xl font-bold">Manage Users</h1>
@@ -325,10 +305,12 @@ const UsersPage = () => {
                     placeholder="Search by name, email, or fitness goal..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full p-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-gray-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+                    className="w-full p-3 bg-slate-700 border border-slate-700 rounded-lg text-white placeholder-gray-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
                 />
             </div>
-            {loading && <LoadingSpinner />}
+
+            {/* RESTORED SIMPLE LOADING MESSAGE */}
+            {loading && <p className="text-lg text-indigo-400">Loading users...</p>}
 
             {error && <p className="text-red-400">{error}</p>}
 
@@ -356,7 +338,7 @@ const UsersPage = () => {
             {/* Create Modal */}
             {showCreate && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-                    <div className="bg-slate-800 p-6 rounded-xl w-full max-w-md border border-slate-700 shadow-xl">
+                    <div className="bg-slate-700 p-6 rounded-xl w-full max-w-md border border-slate-700 shadow-xl">
                         <h2 className="text-2xl font-semibold mb-4">Create User</h2>
 
                         <form
