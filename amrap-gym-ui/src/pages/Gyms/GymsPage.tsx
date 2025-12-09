@@ -1,19 +1,136 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { gymService } from "../../services/gymService";
 import { membershipService } from "../../services/membershipService";
 import type { Gym } from "../../types/Gym";
+import { getGymImagePath, FALLBACK_IMAGE_PATH } from "../../utils/imageUtils";
+
+// --- START: Type and Card Component Definitions ---
+
+// Define the shape of a gym object with calculated membership data
+interface GymWithCounts extends Gym {
+    currentMembers: number;
+    spotsLeft: number | string;
+}
+
+interface GymCardProps {
+    gym: GymWithCounts;
+    navigate: ReturnType<typeof useNavigate>;
+    setEditingGym: (gym: GymWithCounts) => void;
+    handleDelete: (gym: GymWithCounts) => Promise<void>;
+}
+
+const GymCard = ({ gym, navigate, setEditingGym, handleDelete }: GymCardProps) => {
+    // Initial state set to the specific gym image path
+    const [imageSrc, setImageSrc] = useState(getGymImagePath(gym.name));
+
+    // Fallback handler if the specific image is not found (404)
+    const handleImageError = () => {
+        setImageSrc(FALLBACK_IMAGE_PATH);
+    };
+
+    return (
+        // Entire card is clickable to navigate to details page
+        <div
+            key={gym.id}
+            className="bg-slate-800 rounded-xl border border-slate-700 shadow-xl overflow-hidden flex flex-col transition-all duration-300 hover:shadow-2xl hover:border-indigo-400 cursor-pointer"
+            onClick={() => navigate(`/gyms/${gym.id}`)}
+        >
+            {/* Image Section */}
+            <div className="h-40 w-full overflow-hidden">
+                <img
+                    src={imageSrc}
+                    alt={`${gym.name} interior`}
+                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                    onError={handleImageError}
+                    loading="lazy"
+                />
+            </div>
+
+            {/* Content Section */}
+            <div className="p-6 flex flex-col flex-grow">
+                <h3 className="text-2xl font-bold mb-2 text-indigo-400">{gym.name}</h3>
+
+                <div className="space-y-1 mb-4 text-gray-300">
+                    <p>
+                        <strong>Type:</strong> {gym.type}
+                    </p>
+                    <p>
+                        <strong>Location:</strong> {gym.location || "N/A"}
+                    </p>
+                </div>
+
+                <div className="mt-auto pt-4 border-t border-slate-700">
+                    <p className="text-sm">
+                        Capacity:{" "}
+                        <span className="font-semibold text-white">
+                            {gym.maxCapacity !== null
+                                ? `${gym.currentMembers} / ${gym.maxCapacity}`
+                                : "Unlimited"}
+                        </span>
+                    </p>
+
+                    {/* Check if maxCapacity is NOT null before applying specific color logic */}
+                    {gym.maxCapacity !== null && (
+                        <p
+                            className={`font-bold text-lg mt-1 ${
+                                // FIXED: Use type assertion (as number) for the comparison
+                                (gym.spotsLeft as number) === 0
+                                    ? "text-rose-400"
+                                    : (gym.spotsLeft as number) < 5
+                                        ? "text-yellow-400"
+                                        : "text-green-400"
+                                }`}
+                        >
+                            Spots Left: {gym.spotsLeft}
+                        </p>
+                    )}
+                </div>
+
+                {/* Actions - Prevent click propagation so buttons don't trigger card navigation */}
+                <div className="flex gap-3 mt-4" onClick={(e) => e.stopPropagation()}>
+
+                    <button
+                        onClick={() => navigate(`/gyms/${gym.id}`)}
+                        className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white text-sm"
+                    >
+                        View Details
+                    </button>
+
+                    <button
+                        onClick={() => setEditingGym(gym)}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-white text-sm font-semibold"
+                    >
+                        Edit
+                    </button>
+                    <button
+                        onClick={() => handleDelete(gym)}
+                        className="px-4 py-2 bg-rose-800 hover:bg-rose-700 rounded-lg text-white text-sm font-semibold"
+                    >
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+// --- END: GymCard Component ---
+
 
 const GymsPage = () => {
     const navigate = useNavigate();
 
-    const [gyms, setGyms] = useState<any[]>([]);
+    const [gyms, setGyms] = useState<GymWithCounts[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // STATE FOR SEARCH
+    const [searchTerm, setSearchTerm] = useState("");
 
     const [showCreate, setShowCreate] = useState(false);
     const [editingGym, setEditingGym] = useState<any>(null);
 
+    // STATE FOR NEW GYM FORM
     const [name, setName] = useState("");
     const [type, setType] = useState("");
     const [location, setLocation] = useState("");
@@ -35,7 +152,7 @@ const GymsPage = () => {
                             gym.maxCapacity !== null
                                 ? gym.maxCapacity - users.length
                                 : "∞",
-                    };
+                    } as GymWithCounts;
                 })
             );
 
@@ -88,113 +205,110 @@ const GymsPage = () => {
         }
     };
 
+    const handleDelete = async (gym: GymWithCounts) => {
+        if (!confirm("Are you sure you want to delete this gym?")) return;
+
+        try {
+            // Try backend delete
+            await gymService.delete(gym.id);
+            fetchGyms();
+        } catch (err) {
+
+            const members = await membershipService.getUsersInGym(gym.id);
+
+            if (members.length === 0) {
+                // No members → allow delete on UI
+                setGyms((prev) => prev.filter((g) => g.id !== gym.id));
+                return;
+            }
+
+            // Otherwise error still valid
+            alert("Cannot delete gym — it may still have active memberships.");
+        }
+    }
+
 
     useEffect(() => {
         fetchGyms();
     }, []);
 
+
+    // --- SEARCH FILTERING LOGIC ---
+    const filteredGyms = useMemo(() => {
+        if (!searchTerm) {
+            return gyms;
+        }
+        const lowerCaseSearch = searchTerm.toLowerCase();
+
+        return gyms.filter(gym =>
+            // Search by Name, Type, or Location
+            gym.name.toLowerCase().includes(lowerCaseSearch) ||
+            gym.type.toLowerCase().includes(lowerCaseSearch) ||
+            (gym.location && gym.location.toLowerCase().includes(lowerCaseSearch))
+        );
+    }, [gyms, searchTerm]);
+    // --- END SEARCH FILTERING LOGIC ---
+
+
     return (
         <div className="p-10 min-h-screen bg-slate-900 text-white">
             <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-bold">Gyms</h1>
+                <h1 className="text-3xl font-bold">Manage Gyms</h1>
 
-                <Link
-                    to="/"
-                    className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white"
-                >
-                    ← Back to Dashboard
-                </Link>
+                {/* Header Actions */}
+                <div className="flex gap-4 items-center">
+                    <Link
+                        to="/"
+                        className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white"
+                    >
+                        ← Back to Dashboard
+                    </Link>
 
-                <button
-                    onClick={() => setShowCreate(true)}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white"
-                >
-                    + Add Gym
-                </button>
+                    <button
+                        onClick={() => setShowCreate(true)}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white font-semibold"
+                    >
+                        + Add Gym
+                    </button>
+                </div>
+            </div>
+
+            {/* Search Bar Implementation */}
+            <div className="mb-8 max-w-lg">
+                <input
+                    type="text"
+                    placeholder="Search by gym name, type, or location..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full p-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-gray-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+                />
             </div>
 
             {loading && <p className="text-gray-300">Loading gyms...</p>}
             {error && <p className="text-red-400">{error}</p>}
 
-            {/* GYM CARDS */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {gyms.map((gym) => (
-                    <div
+            {/* GYM CARDS - Now using filteredGyms */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredGyms.map((gym) => (
+                    <GymCard
                         key={gym.id}
-                        className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow hover:shadow-lg transition-all"
-                    >
-                        <h3 className="text-xl font-semibold mb-3">{gym.name}</h3>
-
-                        <p className="text-gray-300">
-                            <strong>Type:</strong> {gym.type}
-                        </p>
-
-                        <p className="text-gray-300">
-                            <strong>Location:</strong> {gym.location || "—"}
-                        </p>
-
-                        {gym.maxCapacity !== null && (
-                            <p className="text-gray-300">
-                                <strong>Capacity:</strong> {gym.currentMembers}/
-                                {gym.maxCapacity}
-                            </p>
-                        )}
-
-                        {gym.maxCapacity !== null && (
-                            <p className="text-green-400 font-semibold">
-                                Spots Left: {gym.spotsLeft}
-                            </p>
-                        )}
-
-                        <div className="flex gap-3 mt-4">
-                            <button
-                                onClick={() => navigate(`/gyms/${gym.id}`)}
-                                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white"
-                            >
-                                View Members
-                            </button>
-
-                            <button
-                                onClick={() => setEditingGym(gym)}
-                                className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-white"
-                            >
-                                Edit
-                            </button>
-                            <button
-                                onClick={async () => {
-                                    if (!confirm("Are you sure you want to delete this gym?")) return;
-
-                                    try {
-                                        // Try backend delete
-                                        await gymService.delete(gym.id);
-                                        fetchGyms();
-                                    } catch (err) {
-
-                                        const members = await membershipService.getUsersInGym(gym.id);
-
-                                        if (members.length === 0) {
-                                            // No members → allow delete on UI
-                                            setGyms((prev) => prev.filter((g) => g.id !== gym.id));
-                                            return;
-                                        }
-
-                                        // Otherwise error still valid
-                                        alert("Cannot delete gym — it may still have active memberships.");
-                                    }
-                                }}
-                                className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white"
-                            >
-                                Delete
-                            </button>
-
-                        </div>
-                    </div>
+                        gym={gym}
+                        navigate={navigate}
+                        setEditingGym={setEditingGym}
+                        handleDelete={handleDelete}
+                    />
                 ))}
             </div>
 
+            {/* Message when no results found */}
+            {!loading && filteredGyms.length === 0 && searchTerm && (
+                <p className="text-gray-400 mt-6">
+                    No gyms found matching "{searchTerm}".
+                </p>
+            )}
+
 
             {/* CREATE GYM MODAL */}
-
             {showCreate && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
                     <div className="bg-slate-800 p-6 rounded-xl w-full max-w-md border border-slate-700">
@@ -249,7 +363,7 @@ const GymsPage = () => {
 
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 bg-blue-600 rounded-lg"
+                                    className="px-4 py-2 bg-indigo-600 rounded-lg"
                                 >
                                     Create
                                 </button>
@@ -258,7 +372,6 @@ const GymsPage = () => {
                     </div>
                 </div>
             )}
-
 
 
             {/* EDIT GYM MODAL */}
@@ -358,8 +471,6 @@ const GymsPage = () => {
                     </div>
                 </div>
             )}
-
-
         </div>
     );
 };

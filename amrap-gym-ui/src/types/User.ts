@@ -4,10 +4,11 @@ export interface User {
     email: string;
     dateOfBirth: string;
     fitnessGoal: string;
-
+    createdAt?: string;
 
     gyms?: {
         id: string;
         name: string;
     }[];
 }
+

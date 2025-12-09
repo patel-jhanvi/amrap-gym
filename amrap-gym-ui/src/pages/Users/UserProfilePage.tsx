@@ -8,13 +8,19 @@ import type { User } from "../../types/User";
 import type { Gym } from "../../types/Gym";
 import ManageMembershipModal from "./ManageMembershipModal";
 
+// Define the structure for a Gym with the attached Membership data (for join date fix)
+interface GymWithMembership extends Gym {
+    joinDate?: string;
+}
+
+
 const UserProfilePage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
     const [user, setUser] = useState<User | null>(null);
     const [gyms, setGyms] = useState<Gym[]>([]);
-    const [userGyms, setUserGyms] = useState<Gym[]>([]);
+    const [userGyms, setUserGyms] = useState<GymWithMembership[]>([]); // Using new type
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -31,12 +37,13 @@ const UserProfilePage = () => {
             const [userRes, allGyms, gymsForUser] = await Promise.all([
                 userService.getById(id),
                 gymService.getAll(),
+                // NOTE: We rely on this call returning GymWithMembership data
                 membershipService.getUserGyms(id),
             ]);
 
             setUser(userRes);
             setGyms(allGyms);
-            setUserGyms(gymsForUser);
+            setUserGyms(gymsForUser as GymWithMembership[]);
             setError(null);
         } catch (e) {
             console.error(e);
@@ -70,7 +77,7 @@ const UserProfilePage = () => {
 
     const handleRemoveGym = async () => {
         if (!id || !selectedGymToRemove) return;
-        const confirmed = window.confirm("Remove this membership?");
+        const confirmed = window.confirm("Are you sure you want to remove this membership?");
         if (!confirmed) return;
 
         setSaving(true);
@@ -92,157 +99,182 @@ const UserProfilePage = () => {
         (g) => !userGyms.some((ug) => ug.id === g.id)
     );
 
+    // Helper to calculate age from DOB string
+    const calculateAge = (dob: string | undefined) => {
+        if (!dob) return "N/A";
+        const today = new Date();
+        const birthDate = new Date(dob);
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        return age;
+    };
+
+
     if (loading) {
-        return <div className="p-6 min-h-screen bg-slate-900 text-white">Loading profile...</div>;
+        return <div className="p-10 min-h-screen bg-slate-900 text-white">Loading profile...</div>;
     }
 
     if (!user) {
-        return <div className="p-6 min-h-screen bg-slate-900 text-white">User not found.</div>;
+        return <div className="p-10 min-h-screen bg-slate-900 text-white">User not found.</div>;
     }
 
+    const userAge = calculateAge(user.dateOfBirth);
+
+    // --- JOIN DATE FIX: Look for the first membership date ---
+    const firstMembership = userGyms[0];
+    const joinDateDisplay = (firstMembership?.joinDate)
+        ? new Date(firstMembership.joinDate).toLocaleDateString()
+        : (user.createdAt
+            ? new Date(user.createdAt).toLocaleDateString()
+            : "N/A"); // Fallback to user creation date
+
+
     return (
-        <div className="p-6 min-h-screen bg-slate-900 text-white">
-            {/* HEADER */}
-            <div className="flex justify-between items-center mb-6">
+        <div className="p-10 min-h-screen bg-slate-900 text-white">
+            {/* HEADER AND ACTIONS */}
+            <div className="flex justify-between items-center mb-8 pb-4 border-b border-slate-700">
                 <div>
-                    <h1 className="text-3xl font-bold mb-1">{user.name}</h1>
-                    <p className="text-slate-300">{user.email}</p>
+                    <h1 className="text-4xl font-extrabold mb-1 text-indigo-400">{user.name}</h1>
+                    <p className="text-xl text-slate-300">{user.email}</p>
                 </div>
 
                 <div className="flex gap-3">
-                    <button
-                        onClick={() => setShowMembershipModal(true)}
-                        className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg"
-                    >
-                        Manage Memberships
-                    </button>
+
+                    {/* The "Manage Memberships" button has been removed */}
 
                     <button
                         onClick={() => navigate(`/users/${id}/edit`)}
-                        className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg"
+                        // Edit action uses the Emerald color
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-white font-semibold"
                     >
-                        Edit User
+                        Edit User Profile
                     </button>
 
                     <Link
                         to="/users"
-                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg"
+                        className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white font-semibold"
                     >
                         ← Back to Users
                     </Link>
                 </div>
-
             </div>
 
-            {error && <p className="mb-4 text-red-400">{error}</p>}
+            {error && <p className="mb-4 text-rose-400">{error}</p>}
 
-            {/* TOP CARDS */}
-            <div className="grid md:grid-cols-2 gap-6 mb-8">
-                {/* PROFILE CARD */}
-                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                    <h2 className="text-xl font-semibold mb-3">Profile</h2>
-                    <p className="text-slate-300">
-                        <span className="font-medium text-slate-100">Date of birth:</span>{" "}
-                        {new Date(user.dateOfBirth).toLocaleDateString()}
-                    </p>
-                    <p className="text-slate-300 mt-1">
-                        <span className="font-medium text-slate-100">Fitness goal:</span>{" "}
-                        {user.fitnessGoal}
-                    </p>
+            {/* PROFILE  */}
+            <div className="grid lg:grid-cols-3 gap-6 mb-10">
+                {/* 1. PROFILE CARD */}
+                <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg lg:col-span-1">
+                    <h2 className="text-2xl font-bold mb-4 text-indigo-300">Profile Details</h2>
+
+                    <div className="space-y-3 text-lg">
+                        <ProfileDetail label="Age" value={userAge} />
+                        <ProfileDetail label="Date of Birth" value={user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : "N/A"} />
+                        <ProfileDetail label="Fitness Goal" value={user.fitnessGoal || "N/A"} />
+
+                        {/* 'JOINED' DATE: Uses the joinDateDisplay variable */}
+                        <ProfileDetail label="Joined" value={joinDateDisplay} />
+                    </div>
                 </div>
 
-                {/* CURRENT GYMS CARD */}
-                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                    <h2 className="text-xl font-semibold mb-3">Current Gyms</h2>
-                    {userGyms.length === 0 ? (
-                        <p className="text-slate-400">
-                            This user is not assigned to any gym.
+
+                <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg lg:col-span-2">
+                    <h2 className="text-2xl font-bold mb-6 text-indigo-300">Manage Memberships</h2>
+
+                    {/* Add Gym */}
+                    <div className="mb-6 pb-6 border-b border-slate-700">
+                        <p className="text-sm font-semibold text-white mb-2">
+                            Add User to a Gym
                         </p>
-                    ) : (
-                        <ul className="space-y-2">
-                            {userGyms.map((g) => (
-                                <li
-                                    key={g.id}
-                                    className="flex items-center justify-between bg-slate-900 px-3 py-2 rounded-lg"
-                                >
-                                    <div>
-                                        <p className="font-medium">{g.name}</p>
-                                        {g.location && (
-                                            <p className="text-slate-400 text-sm">
-                                                {g.location}
-                                            </p>
-                                        )}
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
-            </div>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <select
+                                value={selectedGymToAdd}
+                                onChange={(e) => setSelectedGymToAdd(e.target.value)}
+                                className="flex-1 bg-slate-700 border border-slate-600 text-white p-2 rounded"
+                            >
+                                <option value="">Select gym to add…</option>
+                                {availableGymsToAdd.map((g) => (
+                                    <option key={g.id} value={g.id}>
+                                        {g.name} ({g.location || "N/A"})
+                                    </option>
+                                ))}
+                            </select>
 
-            {/* MEMBERSHIP MANAGER */}
-            <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
-                <h2 className="text-xl font-semibold mb-4">Manage Memberships</h2>
-
-                {/* ADD GYM */}
-                <div className="mb-6">
-                    <p className="text-sm text-slate-300 mb-2">
-                        Add this user to another gym
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                        <select
-                            value={selectedGymToAdd}
-                            onChange={(e) => setSelectedGymToAdd(e.target.value)}
-                            className="flex-1 bg-slate-700 border border-slate-600 text-white p-2 rounded"
-                        >
-                            <option value="">Select gym…</option>
-                            {availableGymsToAdd.map((g) => (
-                                <option key={g.id} value={g.id}>
-                                    {g.name}
-                                </option>
-                            ))}
-                        </select>
-
-                        <button
-                            onClick={handleAddGym}
-                            disabled={!selectedGymToAdd || saving}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg disabled:bg-blue-300"
-                        >
-                            {saving ? "Saving..." : "Add Gym"}
-                        </button>
+                            <button
+                                onClick={handleAddGym}
+                                disabled={!selectedGymToAdd || saving}
+                                // Add button uses primary Indigo color
+                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg disabled:bg-indigo-300 text-white font-semibold"
+                            >
+                                {saving ? "Saving..." : "Add Gym"}
+                            </button>
+                        </div>
                     </div>
-                </div>
 
-                {/* REMOVE GYM */}
-                <div>
-                    <p className="text-sm text-slate-300 mb-2">
-                        Remove this user from a gym
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                        <select
-                            value={selectedGymToRemove}
-                            onChange={(e) => setSelectedGymToRemove(e.target.value)}
-                            className="flex-1 bg-slate-700 border border-slate-600 text-white p-2 rounded"
-                        >
-                            <option value="">Select gym to remove…</option>
-                            {userGyms.map((g) => (
-                                <option key={g.id} value={g.id}>
-                                    {g.name}
-                                </option>
-                            ))}
-                        </select>
+                    {/* REMOVE GYM */}
+                    <div>
+                        <p className="text-sm font-semibold text-white mb-2">
+                            Remove User from a Gym
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <select
+                                value={selectedGymToRemove}
+                                onChange={(e) => setSelectedGymToRemove(e.target.value)}
+                                className="flex-1 bg-slate-700 border border-slate-600 text-white p-2 rounded"
+                            >
+                                <option value="">Select gym to remove…</option>
+                                {userGyms.map((g) => (
+                                    <option key={g.id} value={g.id}>
+                                        {g.name} ({g.location || "N/A"})
+                                    </option>
+                                ))}
+                            </select>
 
-                        <button
-                            onClick={handleRemoveGym}
-                            disabled={!selectedGymToRemove || saving}
-                            className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg disabled:bg-red-300"
-                        >
-                            {saving ? "Removing..." : "Remove Gym"}
-                        </button>
+                            <button
+                                onClick={handleRemoveGym}
+                                disabled={!selectedGymToRemove || saving}
+                                // Remove button uses the subtle Rose color
+                                className="px-4 py-2 bg-rose-800 hover:bg-rose-700 rounded-lg disabled:bg-rose-500 text-white font-semibold"
+                            >
+                                {saving ? "Removing..." : "Remove Gym"}
+                            </button>
 
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* CURRENT GYMS LIST */}
+            <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
+                <h2 className="text-2xl font-bold mb-4 text-indigo-300">Assigned Gyms ({userGyms.length})</h2>
+
+                {userGyms.length === 0 ? (
+                    <p className="text-slate-400">
+                        This user is not currently assigned to any gym.
+                    </p>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {userGyms.map((g) => (
+                            <Link
+                                key={g.id}
+                                to={`/gyms/${g.id}`}
+                                className="flex items-center justify-between bg-slate-700 hover:bg-slate-600 px-4 py-3 rounded-lg border border-slate-700 transition-colors"
+                            >
+                                <div>
+                                    <p className="font-semibold text-white text-lg">{g.name}</p>
+                                    <p className="text-slate-400 text-sm">{g.location || "N/A"}</p>
+                                </div>
+                                <span className="text-indigo-400 font-medium text-sm">View Details →</span>
+                            </Link>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* The ManageMembershipModal is still present but hidden if using inline management */}
             <ManageMembershipModal
                 userId={id!}
                 isOpen={showMembershipModal}
@@ -251,5 +283,13 @@ const UserProfilePage = () => {
         </div>
     );
 };
+
+// Helper component 
+const ProfileDetail = ({ label, value }: { label: string; value: string | number | null | undefined }) => (
+    <div className="flex justify-between items-center pb-2 border-b border-slate-700 last:border-b-0">
+        <span className="font-medium text-slate-300">{label}:</span>
+        <span className="font-semibold text-white">{value || "N/A"}</span>
+    </div>
+);
 
 export default UserProfilePage;
