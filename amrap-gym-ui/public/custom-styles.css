@@ -1,0 +1,81 @@
+/*
+|--------------------------------------------------------------------------
+| Custom Global Overrides & Polish
+|--------------------------------------------------------------------------
+| Applies professional typography, color overrides, and subtle refinements.
+*/
+
+/* 1. Import Fonts (Typography) */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Orbitron:wght@400..900&display=swap');
+
+/* 2. Global Color Overrides (Lighter Dark Theme) */
+.bg-slate-900 {
+    background-color: #1e293b !important;
+    /* Lighter background, subtle depth */
+}
+
+.bg-slate-800 {
+    background-color: #334155 !important;
+    /* Card/Surface background */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease-in-out;
+}
+
+/* 3. Global Typography */
+body {
+    font-family: 'Montserrat', sans-serif !important;
+    color: white;
+}
+
+h1,
+h2,
+h3 {
+    font-family: 'Orbitron', sans-serif !important;
+}
+
+
+input[type="text"],
+input[type="email"],
+input[type="date"],
+select,
+textarea {
+
+    outline: none !important;
+
+    box-shadow: 0 0 0 2px #374151, 0 0 0 4px #4f46e5;
+
+    border-color: #334155 !important;
+
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+
+::-webkit-scrollbar-track {
+    background: #1e293b;
+    /* Matches our background */
+}
+
+/* Style the thumb (the draggable part) */
+::-webkit-scrollbar-thumb {
+    background: #4f46e5;
+    /* Uses our primary brand color (Indigo) */
+    border-radius: 4px;
+    border: 1px solid #1e293b;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #6366f1;
+    /* Lighter indigo on hover */
+}
+
+/* Subtle Text Shadow (Adds density and readability to core text) */
+body {
+    /* Adds a very subtle text shadow for digital screen readability */
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}

@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { userService } from "../../services/userService";
 import { gymService } from "../../services/gymService";
 import api from "../../services/api";
-
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import type { Gym } from "../../types/Gym";
 import type { User } from "../../types/User";
 import { Link, useNavigate } from "react-router-dom";
@@ -72,7 +72,10 @@ const UserCard = ({ user, userGyms, navigate, handleDelete }: UserCardProps) => 
         // Entire card is clickable to navigate to the profile page
         <div
             key={user.id}
-            className="bg-slate-800 rounded-xl border border-slate-700 shadow-xl overflow-hidden flex flex-col transition-all duration-300 hover:shadow-2xl hover:border-indigo-400 cursor-pointer"
+            // New class: Deeper shadow (2xl), softer border, and a dramatic lift/border change on hover
+            className="bg-slate-800 rounded-xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col 
+               transition-all duration-300 cursor-pointer 
+               hover:border-indigo-500 hover:shadow-indigo-500/20"
             onClick={() => navigate(`/users/${user.id}`)}
         >
             {/* Top Bar showing "Member Since" */}
@@ -325,8 +328,8 @@ const UsersPage = () => {
                     className="w-full p-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-gray-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
                 />
             </div>
+            {loading && <LoadingSpinner />}
 
-            {loading && <p>Loading users...</p>}
             {error && <p className="text-red-400">{error}</p>}
 
             {/* Users list - Now using users (filtered by server) and UserCard */}
