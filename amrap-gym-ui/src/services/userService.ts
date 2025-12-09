@@ -1,5 +1,5 @@
 import api from "./api";
-import type { Gym } from "../types/Gym";
+
 import type { User } from "../types/User";
 
 export const userService = {
