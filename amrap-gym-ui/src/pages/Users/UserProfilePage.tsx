@@ -8,19 +8,61 @@ import type { User } from "../../types/User";
 import type { Gym } from "../../types/Gym";
 import ManageMembershipModal from "./ManageMembershipModal";
 
+// Extend the User type temporarily to hold the joinDate found by the special fetch
+interface UserWithJoinDate extends User {
+    joinDate?: string;
+}
+
 // Define the structure for a Gym with the attached Membership data (for join date fix)
 interface GymWithMembership extends Gym {
     joinDate?: string;
 }
+
+// Helper component for cleaner stat boxes
+const ProfileDetail = ({ label, value }: { label: string; value: string | number | null | undefined }) => (
+    <div className="flex justify-between items-center pb-2 border-b border-slate-700 last:border-b-0">
+        <span className="font-medium text-slate-300">{label}:</span>
+        <span className="font-semibold text-white">{value || "N/A"}</span>
+    </div>
+);
+
+// --- HELPER FUNCTION: FORCES THE DATE RETRIEVAL USING THE RELIABLE API ---
+const fetchAndFindEarliestJoinDate = async (userId: string, assignedGyms: GymWithMembership[]) => {
+    let earliestDate: Date | null = null;
+
+    // Iterate through all assigned gyms
+    for (const gym of assignedGyms) {
+        try {
+            // CALLS THE RELIABLE API ENDPOINT (`/gyms/{id}/users`)
+            // This retrieves the membership list with the joinDate
+            const members: { joinDate: string; id: string }[] = await membershipService.getUsersInGym(gym.id);
+
+            // Find the specific user's membership in the list
+            const userMembership = members.find(m => m.id === userId);
+
+            if (userMembership && userMembership.joinDate) {
+                const joinDate = new Date(userMembership.joinDate);
+
+                // Keep the earliest date found
+                if (!earliestDate || joinDate < earliestDate) {
+                    earliestDate = joinDate;
+                }
+            }
+        } catch (e) {
+            console.error(`Failed to fetch members for gym ${gym.id}:`, e);
+        }
+    }
+    return earliestDate ? earliestDate.toISOString() : undefined;
+};
 
 
 const UserProfilePage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<UserWithJoinDate | null>(null);
     const [gyms, setGyms] = useState<Gym[]>([]);
-    const [userGyms, setUserGyms] = useState<GymWithMembership[]>([]); // Using new type
+    const [userGyms, setUserGyms] = useState<GymWithMembership[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -37,13 +79,24 @@ const UserProfilePage = () => {
             const [userRes, allGyms, gymsForUser] = await Promise.all([
                 userService.getById(id),
                 gymService.getAll(),
-                // NOTE: We rely on this call returning GymWithMembership data
                 membershipService.getUserGyms(id),
             ]);
 
-            setUser(userRes);
+            const assignedGyms = gymsForUser as GymWithMembership[];
+
+            // --- FINAL FIX IMPLEMENTATION ---
+            const earliestJoinDateISO = await fetchAndFindEarliestJoinDate(id, assignedGyms);
+
+            // Manually attach the correct date to the user object for display
+            if (earliestJoinDateISO) {
+                (userRes as UserWithJoinDate).joinDate = earliestJoinDateISO;
+            }
+            // --- END FINAL FIX IMPLEMENTATION ---
+
+
+            setUser(userRes as UserWithJoinDate);
             setGyms(allGyms);
-            setUserGyms(gymsForUser as GymWithMembership[]);
+            setUserGyms(assignedGyms);
             setError(null);
         } catch (e) {
             console.error(e);
@@ -123,13 +176,12 @@ const UserProfilePage = () => {
 
     const userAge = calculateAge(user.dateOfBirth);
 
-    // --- JOIN DATE FIX: Look for the first membership date ---
-    const firstMembership = userGyms[0];
-    const joinDateDisplay = (firstMembership?.joinDate)
-        ? new Date(firstMembership.joinDate).toLocaleDateString()
+    // --- DISPLAY LOGIC: USES THE ATTACHED joinDate ---
+    const joinDateDisplay = user.joinDate
+        ? new Date(user.joinDate).toLocaleDateString()
         : (user.createdAt
             ? new Date(user.createdAt).toLocaleDateString()
-            : "N/A"); // Fallback to user creation date
+            : "N/A");
 
 
     return (
@@ -142,8 +194,6 @@ const UserProfilePage = () => {
                 </div>
 
                 <div className="flex gap-3">
-
-                    {/* The "Manage Memberships" button has been removed */}
 
                     <button
                         onClick={() => navigate(`/users/${id}/edit`)}
@@ -175,7 +225,7 @@ const UserProfilePage = () => {
                         <ProfileDetail label="Date of Birth" value={user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : "N/A"} />
                         <ProfileDetail label="Fitness Goal" value={user.fitnessGoal || "N/A"} />
 
-                        {/* 'JOINED' DATE: Uses the joinDateDisplay variable */}
+                        {/* 'JOINED' DATE: This will now show the actual membership date */}
                         <ProfileDetail label="Joined" value={joinDateDisplay} />
                     </div>
                 </div>
@@ -274,7 +324,7 @@ const UserProfilePage = () => {
                 )}
             </div>
 
-            {/* The ManageMembershipModal is still present but hidden if using inline management */}
+            {/* The ManageMembershipModal*/}
             <ManageMembershipModal
                 userId={id!}
                 isOpen={showMembershipModal}
@@ -283,13 +333,5 @@ const UserProfilePage = () => {
         </div>
     );
 };
-
-// Helper component 
-const ProfileDetail = ({ label, value }: { label: string; value: string | number | null | undefined }) => (
-    <div className="flex justify-between items-center pb-2 border-b border-slate-700 last:border-b-0">
-        <span className="font-medium text-slate-300">{label}:</span>
-        <span className="font-semibold text-white">{value || "N/A"}</span>
-    </div>
-);
 
 export default UserProfilePage;

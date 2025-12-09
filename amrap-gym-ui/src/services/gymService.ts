@@ -2,8 +2,14 @@ import api from "./api";
 import type { Gym } from "../types/Gym";
 
 export const gymService = {
-    async getAll(): Promise<Gym[]> {
-        const res = await api.get("/gyms");
+
+    async getAll(search?: string): Promise<Gym[]> {
+
+        const url = search
+            ? `/gyms?search=${encodeURIComponent(search)}`
+            : "/gyms";
+
+        const res = await api.get(url);
         return res.data;
     },
 
@@ -25,7 +31,4 @@ export const gymService = {
         const res = await api.put(`/gyms/${id}`, data);
         return res.data;
     }
-
-
 };
-

@@ -1,9 +1,16 @@
 import api from "./api";
+import type { Gym } from "../types/Gym";
+import type { User } from "../types/User";
 
 export const userService = {
-    getAll: async () => {
-        const response = await api.get("/users");
-        return response.data;
+    getAll: async (search: string = ""): Promise<User[]> => {
+        // Construct the URL to pass the search term to the backend API
+        const url = search
+            ? `/users?search=${encodeURIComponent(search)}`
+            : `/users`;
+
+        const res = await api.get(url);
+        return res.data;
     },
 
     getById: async (id: string) => {

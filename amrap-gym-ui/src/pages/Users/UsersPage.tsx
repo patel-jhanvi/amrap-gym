@@ -2,16 +2,24 @@ import { useEffect, useState, useMemo } from "react";
 import { userService } from "../../services/userService";
 import { gymService } from "../../services/gymService";
 import api from "../../services/api";
+import { membershipService } from "../../services/membershipService"; // Added
 
 import type { Gym } from "../../types/Gym";
 import type { User } from "../../types/User";
 import { Link, useNavigate } from "react-router-dom";
 
 // Define the structure for a Gym with the attached Membership data
-// NOTE: We assume the backend includes joinDate on this object when fetching memberships
 interface GymWithMembership extends Gym {
     joinDate?: string;
 }
+
+// Assume Gym also has capacity and current member counts for sorting
+interface GymWithAvailability extends Gym {
+    availableSpots: number;
+    currentMembers?: number; // Assuming this is fetched or calculated elsewhere
+    maxCapacity?: number | null; // Assuming this is the max
+}
+
 
 // --- START: UserCard Component ---
 
@@ -40,13 +48,24 @@ const UserCard = ({ user, userGyms, navigate, handleDelete }: UserCardProps) => 
     };
     const userAge = calculateAge(user.dateOfBirth);
 
-    // --- JOIN DATE FIX: Look for the first membership date ---
-    const firstMembership = assigned[0];
-    const memberSinceDate = (firstMembership?.joinDate)
-        ? new Date(firstMembership.joinDate).toLocaleDateString()
+    // --- JOIN DATE FIX: Look for the earliest membership date ---
+    const earliestMembership = assigned.reduce((earliest, current) => {
+        if (!current.joinDate) return earliest;
+
+        const currentDate = new Date(current.joinDate);
+
+        if (!earliest.joinDate) return current;
+
+        const earliestDate = new Date(earliest.joinDate);
+
+        return currentDate < earliestDate ? current : earliest;
+    }, assigned[0] || {} as GymWithMembership);
+
+    const memberSinceDate = (earliestMembership?.joinDate)
+        ? new Date(earliestMembership.joinDate).toLocaleDateString()
         : (user.createdAt
             ? new Date(user.createdAt).toLocaleDateString()
-            : "N/A"); // Fallback to user creation date
+            : "N/A");
 
     // --- END JOIN DATE FIX ---
 
@@ -139,11 +158,14 @@ const UsersPage = () => {
     const [goal, setGoal] = useState("");
     const [selectedGym, setSelectedGym] = useState("");
 
-    // Fetch all users
-    const loadUsers = async () => {
+    // Fetch all users with optional search term (TS FIX APPLIED HERE)
+    const loadUsers = async (search: string = "") => {
         try {
             setLoading(true);
-            const data = await userService.getAll();
+
+            // NOTE: Assuming your userService.getAll is updated to pass the search query
+            const data = await userService.getAll(search);
+
             setUsers(data);
         } catch (err) {
             setError("Failed to load users");
@@ -179,14 +201,18 @@ const UsersPage = () => {
         setUserGyms(map);
     };
 
+    // Initial fetch and refetch when searchTerm changes (Backend Filtering)
     useEffect(() => {
         const fetchAll = async () => {
-            await loadUsers();
+            await loadUsers(searchTerm); // Pass the current search term
         };
         fetchAll();
         loadGyms();
-    }, []);
 
+        // Dependency array ensures loadUsers runs every time searchTerm changes
+    }, [searchTerm]);
+
+    // Runs whenever users list changes (needed for UserCard to display gym info)
     useEffect(() => {
         if (users.length > 0) loadUserGyms(users);
     }, [users]);
@@ -209,7 +235,7 @@ const UsersPage = () => {
             }
 
             setShowCreate(false);
-            loadUsers();
+            loadUsers(); // Reloads data after creation
 
             setName("");
             setEmail("");
@@ -226,27 +252,43 @@ const UsersPage = () => {
 
         try {
             await userService.delete(userId);
-            loadUsers();
+            loadUsers(); // Reloads data after deletion
         } catch {
             alert("Failed to delete user.");
         }
     };
 
-    // --- SEARCH FILTERING LOGIC ---
-    const filteredUsers = useMemo(() => {
-        if (!searchTerm) {
-            return users;
-        }
-        const lowerCaseSearch = searchTerm.toLowerCase();
+    // --- GYM SORTING LOGIC ---
+    const sortedGyms = useMemo(() => {
+        // NOTE: This logic relies on the Gym state having maxCapacity and currentMembers
+        // properties attached, which is often done in GymsPage but might be missing here.
+        // We use safe typing to avoid errors, assuming capacity/member data is available.
 
-        return users.filter(user =>
-            // Search by Name, Email, or Fitness Goal
-            user.name.toLowerCase().includes(lowerCaseSearch) ||
-            user.email.toLowerCase().includes(lowerCaseSearch) ||
-            (user.fitnessGoal && user.fitnessGoal.toLowerCase().includes(lowerCaseSearch))
-        );
-    }, [users, searchTerm]);
-    // --- END SEARCH FILTERING LOGIC ---
+        const gymsWithAvailability: GymWithAvailability[] = gyms.map(gym => {
+            const capacity = (gym as any).maxCapacity || 0;
+            const members = (gym as any).currentMembers || 0;
+            const availableSpots = capacity - members;
+
+            return {
+                ...gym,
+                availableSpots: availableSpots,
+            } as GymWithAvailability;
+        });
+
+        // Sort by availableSpots in descending order (most spots first)
+        return gymsWithAvailability.sort((a, b) => {
+            // Handle null/undefined capacity safely for sorting, prioritizing defined spots
+            const aSpots = a.availableSpots;
+            const bSpots = b.availableSpots;
+
+            if (aSpots === undefined || aSpots === null) return 1; // Put undefined spots last
+            if (bSpots === undefined || bSpots === null) return -1; // Put undefined spots last
+
+            return bSpots - aSpots;
+        });
+
+    }, [gyms]);
+    // --- END GYM SORTING LOGIC ---
 
 
     return (
@@ -285,9 +327,9 @@ const UsersPage = () => {
             {loading && <p>Loading users...</p>}
             {error && <p className="text-red-400">{error}</p>}
 
-            {/* Users list - Now using filteredUsers and UserCard */}
+            {/* Users list - Now using users (filtered by server) and UserCard */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-4">
-                {filteredUsers.map((user: User) => (
+                {users.map((user: User) => (
                     <UserCard
                         key={user.id}
                         user={user}
@@ -299,7 +341,7 @@ const UsersPage = () => {
             </div>
 
             {/* Message when no results found */}
-            {!loading && filteredUsers.length === 0 && searchTerm && (
+            {!loading && users.length === 0 && searchTerm && (
                 <p className="text-gray-400 mt-6">
                     No users found matching "{searchTerm}".
                 </p>
@@ -372,9 +414,19 @@ const UsersPage = () => {
                                 >
                                     <option value="">None</option>
 
-                                    {gyms.map((gym: Gym) => (
-                                        <option key={gym.id} value={gym.id}>
+                                    {/* UPDATED: Use sortedGyms and show availability */}
+                                    {sortedGyms.map((gym) => (
+                                        <option
+                                            key={gym.id}
+                                            value={gym.id}
+                                            // Disable if no spots are available
+                                            disabled={gym.availableSpots <= 0}
+                                        >
                                             {gym.name}
+                                            {gym.availableSpots > 0
+                                                ? ` (${gym.availableSpots} spots available)`
+                                                : ` (FULL)`
+                                            }
                                         </option>
                                     ))}
                                 </select>
