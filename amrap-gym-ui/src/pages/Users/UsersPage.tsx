@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from "react";
 import { userService } from "../../services/userService";
 import { gymService } from "../../services/gymService";
 import api from "../../services/api";
-import { membershipService } from "../../services/membershipService"; // Added
 
 import type { Gym } from "../../types/Gym";
 import type { User } from "../../types/User";
@@ -13,11 +12,10 @@ interface GymWithMembership extends Gym {
     joinDate?: string;
 }
 
-// Assume Gym also has capacity and current member counts for sorting
+// FINAL FIX: We only extend Gym to add the calculated property (availableSpots).
+// This resolves the TS conflict with 'maxCapacity'.
 interface GymWithAvailability extends Gym {
     availableSpots: number;
-    currentMembers?: number; // Assuming this is fetched or calculated elsewhere
-    maxCapacity?: number | null; // Assuming this is the max
 }
 
 
@@ -265,8 +263,12 @@ const UsersPage = () => {
         // We use safe typing to avoid errors, assuming capacity/member data is available.
 
         const gymsWithAvailability: GymWithAvailability[] = gyms.map(gym => {
-            const capacity = (gym as any).maxCapacity || 0;
+            // Get capacity directly from the Gym type, handling null capacity
+            const capacity = gym.maxCapacity ?? 0;
+
+            // NOTE: We rely on 'currentMembers' being available, or we default it to 0.
             const members = (gym as any).currentMembers || 0;
+
             const availableSpots = capacity - members;
 
             return {
